@@ -1,0 +1,21 @@
+# 1. Assemble source code into an object file
+ca65 --cpu 65816 src/tiles1.asm -o build/tiles1.o
+# 2. Link object file using the LoROM configuration script
+ld65 -C cfg/lorom.cfg build/tiles1.o -o build/tiles1.sfc
+
+    .word $01E0        ; Color 0: Dark Green Backdrop
+    .word $7FFF        ; Color 1: White
+    .word $0000        ; Color 2: Black
+    .word $001F        ; Color 3: Red
+    .word $03E0        ; Color 4: Green
+    .word $7C00        ; Color 5: Blue
+    .word $03FF        ; Color 6: Yellow
+    .word $7C1F        ; Color 7: Magenta
+    .word $7FFF        ; Color 8: White
+    .word $39CE        ; Color 9: Light Gray
+    .word $2108        ; Color 10: Dark Gray
+    .word $01FF        ; Color 11: Orange
+    .word $0200        ; Color 12: Dark Blue
+    .word $000F        ; Color 13: Dark Red
+    .word $02E0        ; Color 14: Cyan
+    .word $5AD6        ; Color 15: Bright Yellow
