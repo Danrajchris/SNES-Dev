@@ -42,6 +42,10 @@ MDMAEN    = $420B
     ; Emulation Mode Vectors ($FFF0 - $FFFF) - 16 bytes
     .word 0, 0, 0, 0, 0, 0, reset, 0
 
+.segment "ZEROPAGE"
+    frame_counter: .res 1
+    blink_state:   .res 1
+
 .segment "CODE"
 .proc reset
     sei                  
@@ -49,6 +53,11 @@ MDMAEN    = $420B
     xce                  
 
     sep #$30             ; 8-bit A, 8-bit Index registers
+
+    ; Explicitly initialize RAM variables to zero
+    lda #$00
+    sta frame_counter
+    sta blink_state
 
     ; 1. Forced Blanking ON
     lda #$80
@@ -147,12 +156,41 @@ MDMAEN    = $420B
     lda #$0F
     sta INIDISP
 
-@loop:
-    lda $4212            ; Wait for VBLANK
+@wait_vblank_end:
+    lda $4212            
     and #$80             
-    beq @loop            
+    bne @wait_vblank_end   ; Wait until VBLANK ends (bit 7 goes low)
 
-    bra @loop            
+@wait_vblank_start:
+    lda $4212            
+    and #$80             
+    beq @wait_vblank_start ; Wait until VBLANK starts (bit 7 goes high)
+
+    ; --- Flash Timing Logic (Runs precisely once per frame) ---
+    inc frame_counter
+    lda frame_counter
+    cmp #30                ; Every 30 frames (~0.5 seconds)
+    bne @skip_toggle
+
+    stz frame_counter      ; Reset frame counter
+
+    ; Toggle state between 0 and 1
+    lda blink_state
+    eor #$01
+    sta blink_state
+    bne @turn_on
+
+    lda #$80               ; Brightness 0 (Screen Off / Black)
+    bra @update_disp
+
+@turn_on:
+    lda #$0F               ; Brightness 15 (Full Brightness)
+
+@update_disp:
+    sta INIDISP
+
+@skip_toggle:
+    bra @wait_vblank_end   ; Loop back to sync with the next frame
 .endproc
 
 .segment "RODATA"
